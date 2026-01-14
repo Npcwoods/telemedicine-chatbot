@@ -425,6 +425,7 @@ Answer questions based on this knowledge base. If asked about something not cove
 
             // Load chat history from localStorage
             useEffect(() => {
+                // Clear any potentially corrupted data from previous versions
                 try {
                     const storedData = localStorage.getItem(chatHistoryKey);
                     if (storedData && storedData.length > 0) {
@@ -432,24 +433,39 @@ Answer questions based on this knowledge base. If asked about something not cove
                         if (decoded && decoded.length > 0) {
                             const saved = JSON.parse(decoded);
                             if (saved && Array.isArray(saved) && saved.length > 0) {
-                                setMessages(saved.map(m => ({...m, timestamp: new Date(m.timestamp)})));
-                                setShowExamples(false);
+                                // Validate each message has required fields
+                                const validMessages = saved.filter(m =>
+                                    m && m.role && m.content && typeof m.content === 'string'
+                                ).map(m => ({
+                                    ...m,
+                                    timestamp: m.timestamp ? new Date(m.timestamp) : new Date(),
+                                    sources: m.sources || []
+                                }));
+
+                                if (validMessages.length > 0) {
+                                    setMessages(validMessages);
+                                    setShowExamples(false);
+                                }
                             }
                         }
                     }
                 } catch (e) {
-                    // Clear corrupted data
+                    console.error('Failed to load chat history:', e);
                     localStorage.removeItem(chatHistoryKey);
                 }
 
                 // Load API key
                 try {
                     const storedKey = localStorage.getItem(apiKeyStorageKey);
-                    if (storedKey) {
-                        setApiKey(atob(storedKey));
-                        setUseLLM(true);
+                    if (storedKey && storedKey.length > 0) {
+                        const decoded = atob(storedKey);
+                        if (decoded && decoded.length > 0) {
+                            setApiKey(decoded);
+                            setUseLLM(true);
+                        }
                     }
                 } catch (e) {
+                    console.error('Failed to load API key:', e);
                     localStorage.removeItem(apiKeyStorageKey);
                 }
             }, []);
@@ -553,10 +569,15 @@ Answer questions based on this knowledge base. If asked about something not cove
             };
 
             const exportChat = () => {
-                const text = messages.map(m => 
-                    `[${m.timestamp.toLocaleTimeString()}] ${m.role.toUpperCase()}: ${m.content}\n` +
-                    (m.sources ? `Sources: ${m.sources.map(s => s.title).join(', ')}\n` : '')
-                ).join('\n');
+                const text = messages.map(m => {
+                    const time = m.timestamp instanceof Date && !isNaN(m.timestamp)
+                        ? m.timestamp.toLocaleTimeString()
+                        : 'Unknown';
+                    const sources = Array.isArray(m.sources) && m.sources.length > 0
+                        ? `Sources: ${m.sources.map(s => s.title).join(', ')}\n`
+                        : '';
+                    return `[${time}] ${m.role.toUpperCase()}: ${m.content}\n${sources}`;
+                }).join('\n');
                 
                 const blob = new Blob([text], { type: 'text/plain' });
                 const url = URL.createObjectURL(blob);
@@ -625,7 +646,7 @@ Answer questions based on this knowledge base. If asked about something not cove
                                             <div className="whitespace-pre-wrap" dangerouslySetInnerHTML={{
                                                 __html: message.content.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
                                             }} />
-                                            {message.sources && message.sources.length > 0 && (
+                                            {Array.isArray(message.sources) && message.sources.length > 0 && (
                                                 <div className="mt-3 pt-3 border-t border-gray-200">
                                                     <p className="text-xs font-semibold text-gray-600 mb-1">📚 Sources:</p>
                                                     {message.sources.map((source, i) => (
@@ -637,7 +658,9 @@ Answer questions based on this knowledge base. If asked about something not cove
                                             )}
                                         </div>
                                         <div className={`text-xs text-gray-500 mt-1 ${message.role === 'user' ? 'text-right' : 'text-left'}`}>
-                                            {message.timestamp.toLocaleTimeString()}
+                                            {message.timestamp instanceof Date && !isNaN(message.timestamp)
+                                                ? message.timestamp.toLocaleTimeString()
+                                                : ''}
                                         </div>
                                     </div>
                                 </div>
