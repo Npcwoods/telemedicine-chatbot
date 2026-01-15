@@ -23,9 +23,56 @@
 </head>
 <body>
     <div id="root"></div>
-    
+
+    <!-- Pre-load script to handle corrupted localStorage -->
+    <script>
+        try {
+            var chatKey = 'telemedicine_chat_history';
+            var stored = localStorage.getItem(chatKey);
+            if (stored) {
+                var decoded = atob(stored);
+                JSON.parse(decoded);
+            }
+        } catch (e) {
+            console.warn('Clearing corrupted localStorage:', e);
+            localStorage.removeItem('telemedicine_chat_history');
+            localStorage.removeItem('telemedicine_openai_key');
+        }
+    </script>
+
     <script type="text/babel">
         const { useState, useEffect, useRef } = React;
+
+        // Error Boundary to catch React errors
+        class ErrorBoundary extends React.Component {
+            constructor(props) {
+                super(props);
+                this.state = { hasError: false, error: null };
+            }
+            static getDerivedStateFromError(error) {
+                return { hasError: true, error };
+            }
+            componentDidCatch(error, errorInfo) {
+                console.error('React Error:', error, errorInfo);
+            }
+            render() {
+                if (this.state.hasError) {
+                    return (
+                        <div style={{padding: '20px', textAlign: 'center'}}>
+                            <h2>Something went wrong</h2>
+                            <p>{this.state.error?.message}</p>
+                            <button onClick={() => {
+                                localStorage.clear();
+                                window.location.reload();
+                            }} style={{padding: '10px 20px', marginTop: '10px'}}>
+                                Clear Data & Reload
+                            </button>
+                        </div>
+                    );
+                }
+                return this.props.children;
+            }
+        }
 
         // Training data embedded directly
         const TRAINING_DATA = {
@@ -868,7 +915,12 @@ Answer questions based on this knowledge base. If asked about something not cove
             );
         }
 
-        ReactDOM.render(<ChatBot />, document.getElementById('root'));
+        ReactDOM.render(
+            <ErrorBoundary>
+                <ChatBot />
+            </ErrorBoundary>,
+            document.getElementById('root')
+        );
     </script>
 </body>
 </html>
