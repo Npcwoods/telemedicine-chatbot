@@ -550,6 +550,7 @@ Answer questions based on this knowledge base. If asked about something not cove
             const [isTyping, setIsTyping] = useState(false);
             const [showExamples, setShowExamples] = useState(true);
             const [showSettings, setShowSettings] = useState(false);
+            const [showDisclaimer, setShowDisclaimer] = useState(false);
             const [apiKey, setApiKey] = useState('');
             const [useLLM, setUseLLM] = useState(false);
             const [error, setError] = useState('');
@@ -742,6 +743,13 @@ Answer questions based on this knowledge base. If asked about something not cove
                                     </span>
                                 )}
                                 <button
+                                    onClick={() => setShowDisclaimer(true)}
+                                    className="w-7 h-7 bg-blue-500 hover:bg-blue-400 rounded-full text-sm transition-colors flex items-center justify-center"
+                                    title="About this assistant"
+                                >
+                                    i
+                                </button>
+                                <button
                                     onClick={() => setShowSettings(true)}
                                     className="px-3 py-1 bg-blue-500 hover:bg-blue-400 rounded text-sm transition-colors"
                                     title="Settings"
@@ -905,6 +913,43 @@ Answer questions based on this knowledge base. If asked about something not cove
                                         className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                                     >
                                         Save
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Disclaimer Modal */}
+                    {showDisclaimer && (
+                        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                            <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4 shadow-xl">
+                                <h2 className="text-xl font-bold mb-4">About This Assistant</h2>
+
+                                <div className="space-y-3 text-sm text-gray-700">
+                                    <p>
+                                        This AI assistant is designed to help NPs and PAs learn about starting a telemedicine practice based on the <strong>Telemedicine Startup Blueprint</strong> content.
+                                    </p>
+
+                                    <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                                        <p className="font-semibold text-yellow-800 mb-1">Important:</p>
+                                        <ul className="list-disc list-inside text-yellow-700 space-y-1">
+                                            <li>This is not medical or legal advice</li>
+                                            <li>Always consult a healthcare attorney for compliance questions</li>
+                                            <li>Responses are based on training materials, not real-time information</li>
+                                        </ul>
+                                    </div>
+
+                                    <p>
+                                        The assistant speaks in the voice of Chris Woods (NPCWoods) and draws from TSB training materials covering startup costs, legal compliance, marketing, pricing, and more.
+                                    </p>
+                                </div>
+
+                                <div className="flex justify-end mt-4">
+                                    <button
+                                        onClick={() => setShowDisclaimer(false)}
+                                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                                    >
+                                        Got it
                                     </button>
                                 </div>
                             </div>
